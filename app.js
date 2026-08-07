@@ -94,8 +94,8 @@ const CATALOG_SOURCES = {
         ...product,
         brand: "CADIVI",
         unit: product.unit || "mét",
-        effectiveDate: "06-04-2026",
-        sourceDocument: "CADIVI T4 2026.pdf"
+        effectiveDate: product.effectiveDate || "06-04-2026",
+        sourceDocument: product.sourceDocument || "CADIVI T4 2026.pdf"
       }))
   },
   MITSUBISHI: {
