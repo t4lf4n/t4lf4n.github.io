@@ -265,12 +265,12 @@
       .trim();
   }
 
-  function queryParts(value) {
+  function searchQuery(value) {
     const text = normalizeSearch(value);
     return {text, compact:text.replace(/\s+/g, ""), tokens:text.split(" ").filter(Boolean)};
   }
 
-  function searchKeys(product) {
+  function productSearchKeys(product) {
     if (searchCache.has(product)) return searchCache.get(product);
     const fields = [product.code, product.name, product.spec, product.technical, product.category, product.family, product.brand, product.brandLabel]
       .filter(Boolean)
@@ -280,10 +280,26 @@
     return keys;
   }
 
-  function matchProduct(product, query) {
+  function matchesProductSearch(product, query) {
     if (!query.text) return true;
-    const keys = searchKeys(product);
-    return query.tokens.every(token => keys.text.includes(token)) || keys.compact.includes(query.compact);
+    const entry = productSearchKeys(product);
+    return (
+      entry.text.includes(query.text) ||
+      entry.compact.includes(query.compact) ||
+      query.tokens.every(token =>
+        entry.text.includes(token) || entry.compact.includes(token)
+      )
+    );
+  }
+
+  function searchScore(product, query) {
+    const code = searchQuery(product.code);
+    const name = searchQuery(product.name);
+    if (code.text === query.text || code.compact === query.compact) return 0;
+    if (code.text.startsWith(query.text) || code.compact.startsWith(query.compact)) return 1;
+    if (name.text === query.text || name.compact === query.compact) return 2;
+    if (name.text.startsWith(query.text) || name.compact.startsWith(query.compact)) return 3;
+    return 4;
   }
 
   function productTitle(product) {
@@ -335,23 +351,24 @@
   function renderResults() {
     clearMessage();
     const brand = brandFilter.value;
-    const query = queryParts(searchInput.value);
+    const query = searchQuery(searchInput.value);
     if (!brand && !query.text) {
       resultMeta.textContent = "Nhập từ khóa hoặc chọn nhãn hàng để xem sản phẩm.";
       results.innerHTML = '<div class="empty">Tìm theo mã hàng là nhanh nhất.<br>Ví dụ: <strong>NMBP50</strong>, <strong>LC1D09M7</strong> hoặc <strong>32GRC 30A</strong>.</div>';
       return;
     }
     const matches = products
-      .filter(product => (!brand || product.brand === brand) && matchProduct(product, query))
+      .filter(product => (!brand || product.brand === brand) && matchesProductSearch(product, query))
       .sort((a, b) => {
-        const queryCompact = query.compact;
-        const aCode = normalizeSearch(a.code).replace(/\s+/g, "");
-        const bCode = normalizeSearch(b.code).replace(/\s+/g, "");
-        const aExact = queryCompact && aCode === queryCompact ? 0 : 1;
-        const bExact = queryCompact && bCode === queryCompact ? 0 : 1;
-        return aExact - bExact || aCode.localeCompare(bCode, "vi", {numeric:true}) || a.price - b.price;
+        const byScore = query.text ? searchScore(a, query) - searchScore(b, query) : 0;
+        return (
+          byScore ||
+          String(a.name || "").localeCompare(String(b.name || ""), "vi", {numeric:true}) ||
+          String(a.spec || "").localeCompare(String(b.spec || ""), "vi", {numeric:true}) ||
+          a.price - b.price
+        );
       });
-    const visible = matches.slice(0, 80);
+    const visible = matches.slice(0, 60);
     resultMeta.textContent = matches.length
       ? `Tìm thấy ${matches.length.toLocaleString("vi-VN")} lựa chọn${matches.length > visible.length ? ` · đang hiện ${visible.length}` : ""}.`
       : "Không tìm thấy sản phẩm phù hợp.";
@@ -431,9 +448,6 @@
 
   async function generatedHtml(preview = false) {
     if (!selectedItems.length) throw new Error("Hãy chọn ít nhất một sản phẩm.");
-    const response = await fetch("index.html", {cache:"no-store"});
-    if (!response.ok) throw new Error("Không đọc được index.html để tạo trang mẫu.");
-    let html = await response.text();
     const config = configObject();
     const heading = config.heading;
     const title = heading || "Báo giá tham khảo";
@@ -441,26 +455,69 @@
     const badge = brands.length === 1 ? brands[0].slice(0, 2) : "BG";
     const units = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
     const description = `${heading}. ${selectedItems.length} mặt hàng, tổng số lượng ${units}.`;
-    const sideText = selectedItems.map(item => `${item.product.code || item.product.name} · ${item.quantity} ${item.product.unit}`).join("<br>");
+    const sideText = selectedItems.map(item =>
+      `${esc(item.product.code || item.product.name)} · ${item.quantity} ${esc(item.product.unit)}`
+    ).join("<br>");
     const safeConfig = JSON.stringify(config, null, 2).replace(/</g, "\\u003c");
+    const baseTag = preview
+      ? `\n  <base href="${new URL("./", window.location.href).href.replace(/"/g, "&quot;")}">`
+      : "";
 
-    html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`);
-    html = html.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(description)}">`);
-    html = html.replace(/<div class="icon" aria-hidden="true">[\s\S]*?<\/div>/, `<div class="icon" aria-hidden="true">${esc(badge)}</div>`);
-    html = html.replace(/<h1>[\s\S]*?<\/h1>/, `<h1>${esc(title)}</h1>`);
-    html = html.replace("Sản phẩm đã chọn", "Sản phẩm đang xem");
-    html = html.replace("Tự động cập nhật theo cuộc hội thoại", sideText);
-    html = html.replace("<span>Tạm tính</span>", "<span>Giá tham khảo</span>");
-    html = html.replace("Đang tải dữ liệu sản phẩm…", "Đang chuẩn bị báo giá tham khảo…");
-    html = html.replace(
-      '<script src="app.js"><\/script>',
-      `<script>\n  window.QUOTE_PRESELECT = ${safeConfig};\n<\/script>\n<script src="app.js"><\/script>`
-    );
-    if (preview) {
-      const baseUrl = new URL("./", window.location.href).href.replace(/"/g, "&quot;");
-      html = html.replace("<head>", `<head>\n  <base href="${baseUrl}">`);
-    }
-    return `<!-- Tạo từ tao-trang-san-pham.html -->\n${html}`;
+    return `<!doctype html>
+<html lang="vi">
+<head>${baseTag}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="${esc(description)}">
+  <title>${esc(title)}</title>
+  <link rel="stylesheet" href="quote-page.css">
+</head>
+<body>
+<main class="app">
+  <section class="main">
+    <header class="header">
+      <div class="identity">
+        <div class="icon" aria-hidden="true">${esc(badge)}</div>
+        <div>
+          <h1>${esc(title)}</h1>
+          <div class="status"><span class="dot"></span><span id="catalogCount">Đang tải giá tham khảo…</span></div>
+        </div>
+      </div>
+      <div class="mobile-cart">Đã chọn <span id="mobileCount">0</span></div>
+      <button class="ghost" id="reset" type="button">Chọn sản phẩm khác</button>
+    </header>
+    <div class="chat" id="chat" aria-live="polite">
+      <div class="row bot"><div class="bubble">Đang chuẩn bị báo giá tham khảo…</div></div>
+      <noscript><div class="row bot"><div class="bubble error">Trình duyệt cần bật JavaScript để xem báo giá.</div></div></noscript>
+    </div>
+  </section>
+  <aside class="side">
+    <h2>Sản phẩm đang xem</h2>
+    <p class="side-sub">${sideText}</p>
+    <div class="cart" id="cart"></div>
+    <div class="summary">
+      <div class="summary-row"><span>Số mặt hàng</span><strong id="lineCount">0</strong></div>
+      <div class="summary-row"><span>Tổng số lượng</span><strong id="unitCount">0</strong></div>
+      <div class="summary-row total"><span>Giá tham khảo</span><span id="grandTotal">0 ₫</span></div>
+    </div>
+    <div class="note">Đơn giá hiển thị là giá tham khảo theo catalog hiện hành. Công ty sẽ liên hệ xác nhận khi nhận được yêu cầu.</div>
+  </aside>
+</main>
+<script src="config.js"><\/script>
+<script src="catalog-data.js"><\/script>
+<script src="cadivi-catalog-data.js"><\/script>
+<script src="mitsubishi-catalog-data.js"><\/script>
+<script src="mennekes-catalog-data.js"><\/script>
+<script src="chint-catalog-data.js"><\/script>
+<script src="autonics-catalog-data.js"><\/script>
+<script src="schneider-catalog-data.js"><\/script>
+<script src="nanoco-catalog-data.js"><\/script>
+<script>
+  window.QUOTE_PRESELECT = ${safeConfig};
+<\/script>
+<script src="app.js"><\/script>
+</body>
+</html>`;
   }
 
   function downloadBlob(html, name) {
