@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="Công cụ nội bộ tạo landing page báo giá đã chọn sẵn nhiều sản phẩm.">
+  <title>Tạo trang sản phẩm chọn sẵn</title>
+  <style>
+    :root{
+      --primary:#117f7f;--dark:#0a6060;--soft:#eaf7f7;--bg:#f3f6f7;
+      --surface:#fff;--text:#182226;--muted:#68777e;--line:#dce5e8;
+      --danger:#b52e2e;--shadow:0 18px 55px rgba(20,50,60,.12)
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;color:var(--text);background:radial-gradient(circle at 0 0,rgba(17,127,127,.13),transparent 34%),var(--bg);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.48}
+    .shell{width:min(1240px,calc(100% - 28px));margin:26px auto}
+    .topbar{padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.96);box-shadow:var(--shadow)}
+    .identity{display:flex;align-items:center;gap:14px;min-width:0}
+    .logo{width:52px;height:52px;display:grid;place-items:center;flex:0 0 auto;border-radius:16px;color:#fff;background:linear-gradient(135deg,var(--primary),var(--dark));font-weight:900}
+    h1{margin:0;font-size:21px}
+    .subtitle{margin:4px 0 0;color:var(--muted);font-size:13px;line-height:1.4}
+    .catalog-status{flex:0 0 auto;padding:8px 11px;border-radius:999px;color:var(--dark);background:var(--soft);font-size:12px;font-weight:800}
+    .workspace{margin-top:18px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(340px,.75fr);gap:18px;align-items:start}
+    .card{border:1px solid var(--line);border-radius:22px;background:var(--surface);box-shadow:0 12px 35px rgba(20,50,60,.08);overflow:hidden}
+    .card-head{padding:18px 20px;border-bottom:1px solid var(--line)}
+    .card-head h2{margin:0;font-size:17px}
+    .card-head p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.45}
+    .search-tools{padding:16px 18px;display:grid;grid-template-columns:180px minmax(0,1fr);gap:10px;border-bottom:1px solid var(--line);background:#fbfcfc}
+    input,select{width:100%;height:44px;padding:0 12px;border:1px solid #b9c9ce;border-radius:11px;color:var(--text);background:#fff}
+    input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid rgba(17,127,127,.25);outline-offset:2px;border-color:var(--primary)}
+    .result-meta{padding:10px 18px;color:var(--muted);font-size:12px;border-bottom:1px solid var(--line)}
+    .results{max-height:630px;overflow:auto}
+    .result{width:100%;padding:13px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 14px;border:0;border-bottom:1px solid var(--line);color:var(--text);background:#fff;text-align:left}
+    .result:last-child{border-bottom:0}
+    .result:hover{background:var(--soft)}
+    .result-title{min-width:0;font-size:14px;font-weight:850;overflow-wrap:anywhere}
+    .result-detail{min-width:0;color:var(--muted);font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+    .result-side{grid-column:2;grid-row:1 / span 2;align-self:center;text-align:right}
+    .price{display:block;color:var(--dark);font-size:13px;font-weight:850;white-space:nowrap}
+    .add-label{display:block;margin-top:4px;color:var(--primary);font-size:12px;font-weight:800}
+    .empty{padding:42px 20px;color:var(--muted);text-align:center;font-size:13px;line-height:1.55}
+    .selected{padding:14px;display:flex;flex-direction:column;gap:10px;max-height:500px;overflow:auto}
+    .selected-item{padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff}
+    .selected-title{font-size:13px;font-weight:850;line-height:1.4;overflow-wrap:anywhere}
+    .selected-meta{margin-top:5px;color:var(--muted);font-size:12px;line-height:1.4}
+    .selected-actions{margin-top:10px;display:grid;grid-template-columns:minmax(110px,150px) 1fr auto;gap:8px;align-items:center}
+    .selected-actions input{height:38px}
+    .line-total{font-size:12px;font-weight:850;text-align:right}
+    .remove{height:38px;padding:0 10px;border:1px solid #eccaca;border-radius:10px;color:var(--danger);background:#fff5f5;font-weight:800}
+    .summary{padding:15px 18px;border-top:1px solid var(--line);background:#fbfcfc}
+    .summary-row{display:flex;justify-content:space-between;gap:12px;margin:5px 0;color:var(--muted);font-size:13px}
+    .summary-row.total{margin-top:11px;color:var(--text);font-size:18px;font-weight:900}
+    .settings{margin-top:18px}
+    .form{padding:17px 18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field.full{grid-column:1 / -1}
+    label{font-size:12px;font-weight:850}
+    .help{color:var(--muted);font-size:11px;line-height:1.4}
+    .actions{padding:16px 18px;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:9px;border-top:1px solid var(--line);background:#fbfcfc}
+    .btn{min-height:42px;padding:0 15px;border:1px solid var(--line);border-radius:11px;color:var(--text);background:#fff;font-weight:850}
+    .btn.primary{color:#fff;border-color:var(--primary);background:var(--primary)}
+    .btn.primary:hover{background:var(--dark)}
+    .btn:hover:not(:disabled){border-color:var(--primary);background:var(--soft)}
+    .btn.primary:hover:not(:disabled){background:var(--dark)}
+    .message{display:none;margin:0 18px 16px;padding:11px 12px;border-radius:11px;font-size:12px;line-height:1.45}
+    .message.show{display:block}
+    .message.error{color:#862626;background:#fff0f0;border:1px solid #efcaca}
+    .message.success{color:#145e3c;background:#edf8f2;border:1px solid #cce8d8}
+    @media(max-width:900px){.workspace{grid-template-columns:1fr}.results{max-height:480px}}
+    @media(max-width:620px){.shell{width:100%;margin:0}.topbar,.card{border-left:0;border-right:0;border-radius:0}.topbar{align-items:flex-start}.catalog-status{display:none}.workspace{margin-top:10px;gap:10px}.search-tools,.form{grid-template-columns:1fr}.field.full{grid-column:auto}.selected-actions{grid-template-columns:1fr auto}.line-total{grid-column:1 / -1;grid-row:2;text-align:left}.actions .btn{width:100%}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header class="topbar">
+    <div class="identity">
+      <div class="logo" aria-hidden="true">HTML</div>
+      <div>
+        <h1>Tạo trang sản phẩm chọn sẵn</h1>
+        <p class="subtitle">Chọn nhiều sản phẩm, đặt số lượng rồi xuất landing page đi thẳng đến bước nhập số điện thoại.</p>
+      </div>
+    </div>
+    <div class="catalog-status" id="catalogStatus">Đang tải catalog…</div>
+  </header>
+
+  <div class="workspace">
+    <section class="card" aria-labelledby="searchTitle">
+      <div class="card-head">
+        <h2 id="searchTitle">1. Tìm và thêm sản phẩm</h2>
+        <p>Tìm theo mã, tên, thông số hoặc nhóm sản phẩm. Có thể trộn nhiều nhãn hàng trong cùng một trang.</p>
+      </div>
+      <div class="search-tools">
+        <select id="brandFilter" aria-label="Lọc theo nhãn hàng"></select>
+        <input id="searchInput" type="search" autocomplete="off" placeholder="Ví dụ: NMBP50, LC1D09M7, 32GRC 30A…" aria-label="Tìm sản phẩm">
+      </div>
+      <div class="result-meta" id="resultMeta">Nhập từ khóa hoặc chọn nhãn hàng để xem sản phẩm.</div>
+      <div class="results" id="results"></div>
+    </section>
+
+    <div>
+      <section class="card" aria-labelledby="selectedTitle">
+        <div class="card-head">
+          <h2 id="selectedTitle">2. Sản phẩm đã chọn</h2>
+          <p>Điều chỉnh số lượng trước khi tạo trang.</p>
+        </div>
+        <div class="selected" id="selected"></div>
+        <div class="summary">
+          <div class="summary-row"><span>Số mặt hàng</span><strong id="lineCount">0</strong></div>
+          <div class="summary-row"><span>Tổng số lượng</span><strong id="unitCount">0</strong></div>
+          <div class="summary-row total"><span>Giá tham khảo</span><span id="grandTotal">0 ₫</span></div>
+        </div>
+      </section>
+
+      <section class="card settings" aria-labelledby="settingsTitle">
+        <div class="card-head">
+          <h2 id="settingsTitle">3. Thông tin trang xuất</h2>
+          <p>File tạo ra cần đặt cùng thư mục với <code>index.html</code> và các file catalog.</p>
+        </div>
+        <div class="form">
+          <div class="field full">
+            <label for="pageHeading">Tiêu đề khách nhìn thấy</label>
+            <input id="pageHeading" type="text" maxlength="160" placeholder="Báo giá tham khảo đã sẵn sàng">
+          </div>
+          <div class="field full">
+            <label for="fileName">Tên file HTML</label>
+            <input id="fileName" type="text" maxlength="100" placeholder="bao-gia-san-pham.html">
+            <span class="help">Chỉ dùng chữ, số và dấu gạch ngang. Công cụ không cho phép ghi đè index.html.</span>
+          </div>
+        </div>
+        <div class="message" id="message" role="status"></div>
+        <div class="actions">
+          <button class="btn" id="previewButton" type="button" disabled>Xem thử</button>
+          <button class="btn" id="downloadButton" type="button" disabled>Tải file HTML</button>
+          <button class="btn primary" id="saveButton" type="button" disabled>Lưu file HTML…</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="catalog-data.js"></script>
+<script src="cadivi-catalog-data.js"></script>
+<script src="mitsubishi-catalog-data.js"></script>
+<script src="mennekes-catalog-data.js"></script>
+<script src="chint-catalog-data.js"></script>
+<script src="autonics-catalog-data.js"></script>
+<script src="schneider-catalog-data.js"></script>
+<script src="nanoco-catalog-data.js"></script>
+<script>
+(() => {
+  "use strict";
+
+  const money = new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0
+  });
+
+  function splitSharedAmpOptions(spec) {
+    const normalized = String(spec || "").trim();
+    if (!/^[\d.,\s~\-àvA]+$/i.test(normalized) || !/A$/i.test(normalized)) return [];
+    const groups = normalized.includes(",")
+      ? normalized.split(",")
+      : /\s+và\s+/i.test(normalized)
+        ? normalized.split(/\s+và\s+/i)
+        : [];
+    if (groups.length > 1) {
+      const options = groups.map(group => {
+        const cleaned = group.trim().replace(/\s*([~-])\s*/g, "$1");
+        return /A$/i.test(cleaned) ? cleaned : `${cleaned}A`;
+      });
+      return options.every(option => /^\d+(?:\.\d+)?(?:[~-]\d+(?:\.\d+)?)?A$/i.test(option))
+        ? [...new Set(options)]
+        : [];
+    }
+    if (!/^[\d.\s-]+A$/i.test(normalized)) return [];
+    const values = normalized.match(/\d+(?:[.,]\d+)?/g) || [];
+    return values.length > 1
+      ? [...new Set(values.map(value => `${value.replace(",", ".")}A`))]
+      : [];
+  }
+
+  function expandLs(products) {
+    return products.flatMap(product => {
+      const ratings = splitSharedAmpOptions(product.spec);
+      if (!ratings.length) return [product];
+      return ratings.map(rating => ({
+        ...product,
+        id: `${product.id}-${rating.replace(/[^\dA-Z]/gi, "_")}`,
+        baseProductId: product.id,
+        sourceSpec: product.spec,
+        spec: rating
+      }));
+    });
+  }
+
+  const sourceDefinitions = [
+    {brand:"LS", label:"LS Electric", variable:"LS_CATALOG", unit:"cái", transform:expandLs},
+    {brand:"CADIVI", label:"CADIVI", variable:"CADIVI_CATALOG", unit:"mét"},
+    {brand:"MITSUBISHI", label:"Mitsubishi Electric", variable:"MITSUBISHI_CATALOG", unit:"cái"},
+    {brand:"MENNEKES", label:"MENNEKES", variable:"MENNEKES_CATALOG", unit:"cái"},
+    {brand:"CHINT", label:"CHINT", variable:"CHINT_CATALOG", unit:"cái"},
+    {brand:"AUTONICS", label:"Autonics", variable:"AUTONICS_CATALOG", unit:"cái"},
+    {brand:"SCHNEIDER", label:"Schneider Electric", variable:"SCHNEIDER_CATALOG", unit:"cái"},
+    {brand:"NANOCO", label:"Nanoco", variable:"NANOCO_CATALOG", unit:"cái"}
+  ];
+
+  const sources = sourceDefinitions.map(definition => {
+    const raw = Array.isArray(window[definition.variable]) ? window[definition.variable] : [];
+    const transformed = definition.transform ? definition.transform(raw) : raw;
+    return {
+      ...definition,
+      products: transformed.map(product => ({
+        ...product,
+        brand: definition.brand,
+        brandLabel: definition.label,
+        unit: product.unit || definition.unit
+      }))
+    };
+  }).filter(source => source.products.length);
+  const products = sources.flatMap(source => source.products);
+  const searchCache = new WeakMap();
+  const selectedItems = [];
+  let fileNameTouched = false;
+
+  const catalogStatus = document.getElementById("catalogStatus");
+  const brandFilter = document.getElementById("brandFilter");
+  const searchInput = document.getElementById("searchInput");
+  const resultMeta = document.getElementById("resultMeta");
+  const results = document.getElementById("results");
+  const selected = document.getElementById("selected");
+  const lineCount = document.getElementById("lineCount");
+  const unitCount = document.getElementById("unitCount");
+  const grandTotal = document.getElementById("grandTotal");
+  const pageHeading = document.getElementById("pageHeading");
+  const fileName = document.getElementById("fileName");
+  const previewButton = document.getElementById("previewButton");
+  const downloadButton = document.getElementById("downloadButton");
+  const saveButton = document.getElementById("saveButton");
+  const message = document.getElementById("message");
+
+  function esc(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function normalizeSearch(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .toLocaleLowerCase("vi")
+      .replace(/[×*]/g, "x")
+      .replace(/[-_/\\]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function queryParts(value) {
+    const text = normalizeSearch(value);
+    return {text, compact:text.replace(/\s+/g, ""), tokens:text.split(" ").filter(Boolean)};
+  }
+
+  function searchKeys(product) {
+    if (searchCache.has(product)) return searchCache.get(product);
+    const fields = [product.code, product.name, product.spec, product.technical, product.category, product.family, product.brand, product.brandLabel]
+      .filter(Boolean)
+      .map(normalizeSearch);
+    const keys = {text:fields.join(" "), compact:fields.map(field => field.replace(/\s+/g, "")).join(" ")};
+    searchCache.set(product, keys);
+    return keys;
+  }
+
+  function matchProduct(product, query) {
+    if (!query.text) return true;
+    const keys = searchKeys(product);
+    return query.tokens.every(token => keys.text.includes(token)) || keys.compact.includes(query.compact);
+  }
+
+  function productTitle(product) {
+    return [product.code, product.name].filter(Boolean).join(" - ");
+  }
+
+  function productDetail(product) {
+    return [product.brandLabel, product.family, product.category, product.spec, product.technical]
+      .filter(Boolean).join(" · ");
+  }
+
+  function setMessage(text, type = "success") {
+    message.textContent = text;
+    message.className = `message show ${type}`;
+  }
+
+  function clearMessage() {
+    message.textContent = "";
+    message.className = "message";
+  }
+
+  function slug(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 82);
+  }
+
+  function suggestedHeading() {
+    if (!selectedItems.length) return "";
+    if (selectedItems.length === 1) {
+      const product = selectedItems[0].product;
+      return `Giá tham khảo ${product.brandLabel} ${product.code || product.name}`;
+    }
+    const brands = [...new Set(selectedItems.map(item => item.product.brandLabel))];
+    return `Giá tham khảo bộ ${selectedItems.length} sản phẩm ${brands.join(" + ")}`;
+  }
+
+  function suggestedFileName() {
+    if (!selectedItems.length) return "bao-gia-san-pham.html";
+    const codes = selectedItems.slice(0, 4).map(item => slug(item.product.code || item.product.id));
+    const suffix = selectedItems.length > 4 ? `-${selectedItems.length}-san-pham` : "";
+    return `${codes.join("-")}${suffix}.html`;
+  }
+
+  function renderResults() {
+    clearMessage();
+    const brand = brandFilter.value;
+    const query = queryParts(searchInput.value);
+    if (!brand && !query.text) {
+      resultMeta.textContent = "Nhập từ khóa hoặc chọn nhãn hàng để xem sản phẩm.";
+      results.innerHTML = '<div class="empty">Tìm theo mã hàng là nhanh nhất.<br>Ví dụ: <strong>NMBP50</strong>, <strong>LC1D09M7</strong> hoặc <strong>32GRC 30A</strong>.</div>';
+      return;
+    }
+    const matches = products
+      .filter(product => (!brand || product.brand === brand) && matchProduct(product, query))
+      .sort((a, b) => {
+        const queryCompact = query.compact;
+        const aCode = normalizeSearch(a.code).replace(/\s+/g, "");
+        const bCode = normalizeSearch(b.code).replace(/\s+/g, "");
+        const aExact = queryCompact && aCode === queryCompact ? 0 : 1;
+        const bExact = queryCompact && bCode === queryCompact ? 0 : 1;
+        return aExact - bExact || aCode.localeCompare(bCode, "vi", {numeric:true}) || a.price - b.price;
+      });
+    const visible = matches.slice(0, 80);
+    resultMeta.textContent = matches.length
+      ? `Tìm thấy ${matches.length.toLocaleString("vi-VN")} lựa chọn${matches.length > visible.length ? ` · đang hiện ${visible.length}` : ""}.`
+      : "Không tìm thấy sản phẩm phù hợp.";
+    if (!visible.length) {
+      results.innerHTML = '<div class="empty">Thử bỏ bớt thông số hoặc tìm bằng phần chính của mã hàng.</div>';
+      return;
+    }
+    results.innerHTML = visible.map(product => {
+      const isSelected = selectedItems.some(item => item.product.id === product.id && item.product.brand === product.brand);
+      return `<button class="result" type="button" data-brand="${esc(product.brand)}" data-id="${esc(product.id)}">
+        <span class="result-title">${esc(productTitle(product))}</span>
+        <span class="result-detail">${esc(productDetail(product))}</span>
+        <span class="result-side"><span class="price">${esc(money.format(product.price))}/${esc(product.unit)}</span><span class="add-label">${isSelected ? "Thêm số lượng" : "+ Thêm"}</span></span>
+      </button>`;
+    }).join("");
+  }
+
+  function addProduct(brand, id) {
+    const product = products.find(item => item.brand === brand && item.id === id);
+    if (!product) return;
+    const existing = selectedItems.find(item => item.product.brand === brand && item.product.id === id);
+    if (existing) existing.quantity += 1;
+    else selectedItems.push({product, quantity:1});
+    renderSelected();
+    renderResults();
+  }
+
+  function renderSelected() {
+    if (!selectedItems.length) {
+      selected.innerHTML = '<div class="empty">Chưa có sản phẩm nào.<br>Chọn từ danh sách bên trái để bắt đầu.</div>';
+    } else {
+      selected.innerHTML = selectedItems.map((item, index) => `<div class="selected-item">
+        <div class="selected-title">${esc(productTitle(item.product))}</div>
+        <div class="selected-meta">${esc(productDetail(item.product))}<br>${esc(money.format(item.product.price))}/${esc(item.product.unit)}</div>
+        <div class="selected-actions">
+          <input type="number" min="1" max="100000" step="1" value="${item.quantity}" data-quantity="${index}" aria-label="Số lượng ${esc(item.product.code)}">
+          <span class="line-total">${esc(money.format(item.product.price * item.quantity))}</span>
+          <button class="remove" type="button" data-remove="${index}">Xóa</button>
+        </div>
+      </div>`).join("");
+    }
+    const units = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
+    const total = selectedItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    lineCount.textContent = selectedItems.length.toLocaleString("vi-VN");
+    unitCount.textContent = units.toLocaleString("vi-VN");
+    grandTotal.textContent = money.format(total);
+    if (!pageHeading.dataset.touched) pageHeading.value = suggestedHeading();
+    if (!fileNameTouched) fileName.value = suggestedFileName();
+    const enabled = selectedItems.length > 0;
+    previewButton.disabled = !enabled;
+    downloadButton.disabled = !enabled;
+    saveButton.disabled = !enabled;
+  }
+
+  function validatedFileName() {
+    let value = String(fileName.value || "").trim().toLowerCase();
+    if (!value.endsWith(".html")) value += ".html";
+    if (!/^[a-z0-9][a-z0-9-]*\.html$/.test(value)) {
+      throw new Error("Tên file chỉ được dùng chữ thường không dấu, số và dấu gạch ngang.");
+    }
+    if (value === "index.html" || value === "tao-trang-san-pham.html") {
+      throw new Error("Hãy dùng một tên file mới, không ghi đè trang đang có.");
+    }
+    return value;
+  }
+
+  function configObject() {
+    return {
+      heading: String(pageHeading.value || suggestedHeading() || "Báo giá tham khảo đã sẵn sàng").trim().slice(0, 160),
+      items: selectedItems.map(item => ({
+        brand: item.product.brand,
+        productId: item.product.id,
+        quantity: item.quantity
+      }))
+    };
+  }
+
+  async function generatedHtml(preview = false) {
+    if (!selectedItems.length) throw new Error("Hãy chọn ít nhất một sản phẩm.");
+    const response = await fetch("index.html", {cache:"no-store"});
+    if (!response.ok) throw new Error("Không đọc được index.html để tạo trang mẫu.");
+    let html = await response.text();
+    const config = configObject();
+    const heading = config.heading;
+    const title = heading || "Báo giá tham khảo";
+    const brands = [...new Set(selectedItems.map(item => item.product.brand))];
+    const badge = brands.length === 1 ? brands[0].slice(0, 2) : "BG";
+    const units = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
+    const description = `${heading}. ${selectedItems.length} mặt hàng, tổng số lượng ${units}.`;
+    const sideText = selectedItems.map(item => `${item.product.code || item.product.name} · ${item.quantity} ${item.product.unit}`).join("<br>");
+    const safeConfig = JSON.stringify(config, null, 2).replace(/</g, "\\u003c");
+
+    html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`);
+    html = html.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(description)}">`);
+    html = html.replace(/<div class="icon" aria-hidden="true">[\s\S]*?<\/div>/, `<div class="icon" aria-hidden="true">${esc(badge)}</div>`);
+    html = html.replace(/<h1>[\s\S]*?<\/h1>/, `<h1>${esc(title)}</h1>`);
+    html = html.replace("Sản phẩm đã chọn", "Sản phẩm đang xem");
+    html = html.replace("Tự động cập nhật theo cuộc hội thoại", sideText);
+    html = html.replace("<span>Tạm tính</span>", "<span>Giá tham khảo</span>");
+    html = html.replace("Đang tải dữ liệu sản phẩm…", "Đang chuẩn bị báo giá tham khảo…");
+    html = html.replace(
+      '<script src="app.js"><\/script>',
+      `<script>\n  window.QUOTE_PRESELECT = ${safeConfig};\n<\/script>\n<script src="app.js"><\/script>`
+    );
+    if (preview) {
+      const baseUrl = new URL("./", window.location.href).href.replace(/"/g, "&quot;");
+      html = html.replace("<head>", `<head>\n  <base href="${baseUrl}">`);
+    }
+    return `<!-- Tạo từ tao-trang-san-pham.html -->\n${html}`;
+  }
+
+  function downloadBlob(html, name) {
+    const url = URL.createObjectURL(new Blob([html], {type:"text/html;charset=utf-8"}));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  }
+
+  async function runExport(mode) {
+    clearMessage();
+    try {
+      const name = validatedFileName();
+      if (mode === "preview") {
+        const previewWindow = window.open("", "_blank");
+        if (!previewWindow) throw new Error("Trình duyệt đang chặn cửa sổ xem thử.");
+        previewWindow.document.write("Đang chuẩn bị bản xem thử…");
+        const html = await generatedHtml(true);
+        const url = URL.createObjectURL(new Blob([html], {type:"text/html;charset=utf-8"}));
+        previewWindow.location.href = url;
+        setTimeout(() => URL.revokeObjectURL(url), 120000);
+        setMessage("Đã mở bản xem thử ở tab mới.");
+        return;
+      }
+      const html = await generatedHtml(false);
+      if (mode === "save" && "showSaveFilePicker" in window) {
+        const handle = await window.showSaveFilePicker({
+          suggestedName:name,
+          types:[{description:"Trang HTML", accept:{"text/html":[".html"]}}]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(html);
+        await writable.close();
+        setMessage(`Đã lưu ${name}. Hãy đặt file cùng thư mục với index.html nếu vừa lưu ở nơi khác.`);
+        return;
+      }
+      downloadBlob(html, name);
+      setMessage(`Đã tải ${name}. Hãy chuyển file vào cùng thư mục với index.html.`);
+    } catch (error) {
+      if (error && error.name === "AbortError") return;
+      setMessage(error.message || "Không thể tạo file HTML.", "error");
+    }
+  }
+
+  brandFilter.innerHTML = '<option value="">Tất cả nhãn hàng</option>' + sources.map(source =>
+    `<option value="${esc(source.brand)}">${esc(source.label)} (${source.products.length.toLocaleString("vi-VN")})</option>`
+  ).join("");
+  catalogStatus.textContent = `${products.length.toLocaleString("vi-VN")} lựa chọn · ${sources.length} nhãn hàng`;
+
+  searchInput.addEventListener("input", renderResults);
+  brandFilter.addEventListener("change", renderResults);
+  results.addEventListener("click", event => {
+    const button = event.target.closest("[data-id]");
+    if (button) addProduct(button.dataset.brand, button.dataset.id);
+  });
+  selected.addEventListener("click", event => {
+    const button = event.target.closest("[data-remove]");
+    if (!button) return;
+    selectedItems.splice(Number(button.dataset.remove), 1);
+    renderSelected();
+    renderResults();
+  });
+  selected.addEventListener("change", event => {
+    const input = event.target.closest("[data-quantity]");
+    if (!input) return;
+    const quantity = Number(input.value);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100000) {
+      input.value = selectedItems[Number(input.dataset.quantity)].quantity;
+      setMessage("Số lượng phải là số nguyên từ 1 đến 100000.", "error");
+      return;
+    }
+    selectedItems[Number(input.dataset.quantity)].quantity = quantity;
+    renderSelected();
+  });
+  pageHeading.addEventListener("input", () => { pageHeading.dataset.touched = "true"; });
+  fileName.addEventListener("input", () => { fileNameTouched = true; });
+  previewButton.addEventListener("click", () => runExport("preview"));
+  downloadButton.addEventListener("click", () => runExport("download"));
+  saveButton.addEventListener("click", () => runExport("save"));
+
+  renderResults();
+  renderSelected();
+})();
+</script>
+</body>
+</html>

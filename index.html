@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Trợ lý chọn sản phẩm LS, CADIVI, Mitsubishi Electric, MENNEKES, CHINT, Autonics, Schneider Electric, Nanoco và lập yêu cầu báo giá trực tuyến.">
+  <title>Trợ lý báo giá thiết bị điện</title>
+  <style>
+    :root{
+      --primary:#117f7f;--primary-dark:#0a6060;--soft:#eaf7f7;
+      --bg:#f3f6f7;--surface:#fff;--text:#182226;--muted:#6b7880;
+      --line:#dce5e8;--danger:#bf3030;--danger-soft:#fff0f0;
+      --success:#176f46;--success-soft:#edf8f2;--shadow:0 18px 55px rgba(20,50,60,.12)
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+      color:var(--text);background:radial-gradient(circle at 0 0,rgba(17,127,127,.12),transparent 35%),var(--bg)
+    }
+    button,select{font:inherit}
+    button:disabled{cursor:not-allowed;opacity:.48}
+    .app{
+      width:min(1180px,calc(100% - 28px));min-height:calc(100vh - 52px);margin:26px auto;
+      display:grid;grid-template-columns:minmax(0,1fr) 330px;background:var(--surface);
+      border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:var(--shadow)
+    }
+    .main{display:flex;min-width:0;flex-direction:column;border-right:1px solid var(--line)}
+    .header{
+      min-height:82px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
+      gap:16px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)
+    }
+    .identity{display:flex;align-items:center;gap:12px;min-width:0}
+    .icon{
+      width:48px;height:48px;display:grid;place-items:center;border-radius:15px;color:#fff;
+      background:linear-gradient(135deg,var(--primary),var(--primary-dark));box-shadow:0 8px 22px rgba(17,127,127,.25);
+      font-size:15px;font-weight:900;letter-spacing:-.5px
+    }
+    h1{margin:0;font-size:18px}
+    .status{margin-top:4px;display:flex;align-items:center;gap:7px;color:var(--muted);font-size:13px}
+    .dot{width:8px;height:8px;border-radius:50%;background:#22a668;box-shadow:0 0 0 4px rgba(34,166,104,.12)}
+    .ghost{border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:#fff;color:var(--muted);cursor:pointer}
+    .ghost:hover{border-color:var(--primary);color:var(--primary-dark);background:var(--soft)}
+    .chat{
+      flex:1;min-height:470px;padding:24px clamp(14px,3vw,32px) 34px;overflow:auto;scroll-behavior:smooth;
+      background:linear-gradient(rgba(244,247,248,.45),rgba(244,247,248,.45)),
+      radial-gradient(circle at 100% 0,rgba(17,127,127,.06),transparent 38%)
+    }
+    .row{display:flex;margin:0 0 14px;animation:appear .2s ease-out}
+    .row.user{justify-content:flex-end}
+    .bubble{
+      max-width:min(680px,90%);padding:12px 15px;border-radius:16px;
+      line-height:1.48;font-size:15px;overflow-wrap:anywhere
+    }
+    .row.bot .bubble{background:#fff;border:1px solid var(--line);border-bottom-left-radius:5px;box-shadow:0 6px 18px rgba(36,65,74,.06)}
+    .row.user .bubble{color:#fff;background:var(--primary);border-bottom-right-radius:5px}
+    .bubble.error{color:#8b2525;background:var(--danger-soft);border-color:#efc5c5}
+    .bubble.success{color:#125f3d;background:var(--success-soft);border-color:#cce8d8}
+    .choices{margin:4px 0 22px;display:flex;flex-wrap:wrap;gap:9px;animation:appear .2s ease-out}
+    .choice{
+      max-width:100%;border:1px solid #b9d5d5;border-radius:999px;padding:10px 15px;
+      color:var(--primary-dark);background:#fff;cursor:pointer;font-weight:700;
+      line-height:1.35;text-align:left;transition:.16s
+    }
+    .choice:hover:not(:disabled){transform:translateY(-1px);border-color:var(--primary);background:var(--soft)}
+    .choice:focus-visible,.qty-panel select:focus-visible,.qty-panel input:focus-visible,
+    .select-panel select:focus-visible,.phone-panel input:focus-visible,.search-toolbar input:focus-visible,
+    .product-option:focus-visible{
+      outline:3px solid rgba(17,127,127,.28);outline-offset:2px;border-color:var(--primary)
+    }
+    .choice:disabled{opacity:.5;cursor:not-allowed}
+    .choice.primary{color:#fff;border-color:var(--primary);background:var(--primary)}
+    .choice.primary:hover:not(:disabled){background:var(--primary-dark)}
+    .choice-note{margin-left:5px;font-size:12px;color:var(--muted);font-weight:600}
+    .choice.model-choice{
+      min-width:min(300px,100%);max-width:min(430px,100%);padding:12px 14px;
+      display:flex;flex-direction:column;align-items:flex-start;border-radius:14px
+    }
+    .model-choice .choice-note{display:block;margin:4px 0 0;line-height:1.45}
+    .choice.spec-choice{min-width:92px;border-radius:13px;text-align:center}
+    .spec-choice .choice-note{display:block;margin:4px 0 0}
+    .choice.more-choice{border-style:dashed}
+    .choice.back-choice{color:var(--muted);border-color:var(--line);background:#f8fafb}
+    .qty-panel,.select-panel,.phone-panel{
+      width:min(610px,100%);margin:5px 0 22px;padding:14px;display:flex;gap:10px;border:1px solid var(--line);
+      border-radius:16px;background:#fff;box-shadow:0 6px 18px rgba(36,65,74,.05);animation:appear .2s ease-out
+    }
+    .qty-panel{width:min(650px,100%);flex-wrap:wrap;align-items:flex-start}
+    .phone-panel{width:min(480px,100%);flex-direction:column;gap:8px}
+    .qty-panel select,.qty-panel input,.select-panel select{
+      min-width:0;flex:1;height:43px;padding:0 12px;border:1px solid #b9c9ce;border-radius:11px;background:#fff
+    }
+    .qty-panel input{font:inherit}
+    .qty-error{width:100%;min-height:18px;margin:0;color:var(--danger);font-size:12px;font-weight:700}
+    .search-panel{
+      width:min(760px,100%);margin:5px 0 22px;padding:14px;border:1px solid var(--line);
+      border-radius:16px;background:#fff;box-shadow:0 6px 18px rgba(36,65,74,.05);animation:appear .2s ease-out
+    }
+    .search-toolbar{display:flex;gap:10px;align-items:center}
+    .search-toolbar input{
+      min-width:0;flex:1;height:45px;padding:0 13px;border:1px solid #b9c9ce;
+      border-radius:11px;background:#fff;font:inherit
+    }
+    .search-status{min-height:18px;margin:8px 1px 5px;color:var(--muted);font-size:12px}
+    .product-list{
+      max-height:390px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fbfcfc
+    }
+    .product-option{
+      width:100%;padding:11px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;
+      gap:4px 14px;border:0;border-bottom:1px solid var(--line);color:var(--text);
+      background:#fff;text-align:left;cursor:pointer;font:inherit;transition:.14s
+    }
+    .product-option:last-child{border-bottom:0}
+    .product-option:hover{background:var(--soft)}
+    .product-option-main{min-width:0;font-size:14px;font-weight:800;overflow-wrap:anywhere}
+    .product-option-meta{min-width:0;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+    .product-option-price{grid-column:2;grid-row:1 / span 2;align-self:center;color:var(--primary-dark);font-size:13px;font-weight:850;white-space:nowrap}
+    .search-empty{padding:24px 14px;color:var(--muted);text-align:center;font-size:13px}
+    .phone-panel label{font-size:13px;font-weight:800}
+    .phone-panel input{
+      width:100%;height:46px;padding:0 13px;border:1px solid #b9c9ce;border-radius:11px;background:#fff;font:inherit
+    }
+    .phone-help{margin:0;color:var(--muted);font-size:12px;line-height:1.45}
+    .phone-error{min-height:18px;margin:0;color:var(--danger);font-size:12px;font-weight:700}
+    .phone-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+    .contact-box{
+      margin-top:12px;padding:12px;border:1px solid #b9d5d5;border-radius:12px;background:#fff;
+      display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px
+    }
+    .contact-box a{color:var(--primary-dark);font-weight:850;text-decoration:none}
+    .contact-box a:hover{text-decoration:underline}
+    .quote{margin-top:11px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+    .quote-meta{
+      padding:12px 14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+      color:var(--muted);font-size:13px;background:#f8fafb;border-bottom:1px solid var(--line)
+    }
+    .table-scroll{overflow-x:auto}
+    table{width:100%;min-width:720px;border-collapse:collapse;font-size:13px}
+    th,td{padding:10px 11px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+    th{color:var(--muted);font-size:12px;text-transform:uppercase;background:#fbfcfc}
+    td small{color:var(--muted)}
+    .num{text-align:right}
+    tfoot td{font-weight:850;border-bottom:0;background:var(--soft)}
+    .side{padding:22px;display:flex;flex-direction:column;background:#fbfcfc}
+    .side h2{margin:0 0 4px;font-size:17px}
+    .side-sub{margin:0 0 18px;color:var(--muted);font-size:13px}
+    .cart{flex:1;min-height:110px;display:flex;flex-direction:column;gap:10px}
+    .empty{padding:26px 14px;text-align:center;color:var(--muted);border:1px dashed #cbd7da;border-radius:15px;background:#fff;font-size:13px}
+    .cart-item{padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff}
+    .cart-title{font-weight:750;font-size:13px;line-height:1.4}
+    .cart-meta,.cart-total{margin-top:7px;display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+    .cart-total{font-size:13px;color:var(--text);font-weight:800;align-items:center}
+    .remove{padding:0;border:0;background:transparent;color:var(--danger);font-size:12px;font-weight:750;cursor:pointer}
+    .summary{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+    .summary-row{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;color:var(--muted);font-size:13px}
+    .summary-row.total{margin-top:12px;margin-bottom:0;color:var(--text);font-size:18px;font-weight:850}
+    .note{margin-top:18px;padding:12px;color:var(--muted);background:#f1f5f6;border-radius:12px;font-size:12px;line-height:1.45}
+    .mobile-cart{display:none;align-items:center;gap:8px;color:var(--primary-dark);font-weight:800;font-size:13px}
+    .mobile-cart span{min-width:24px;height:24px;padding:0 7px;display:grid;place-items:center;border-radius:999px;color:#fff;background:var(--primary)}
+    @keyframes appear{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:840px){
+      .app{width:100%;min-height:100vh;margin:0;grid-template-columns:1fr;border:0;border-radius:0}
+      .main{border:0}.side{display:none}.mobile-cart{display:flex}.header{position:sticky;top:0;z-index:10}.chat{min-height:calc(100vh - 82px)}
+      .select-panel,.qty-panel,.search-toolbar{flex-direction:column}
+      .select-panel select,.qty-panel select,.qty-panel input,.qty-panel button,.search-toolbar input,.search-toolbar button{width:100%}
+      .product-option{grid-template-columns:1fr}.product-option-price{grid-column:1;grid-row:auto}
+      .choice.model-choice{width:100%;max-width:100%}
+    }
+    @media print{
+      body{background:#fff}.app{width:100%;min-height:auto;margin:0;display:block;box-shadow:none;border:0}
+      .header,.side,.choices,.qty-panel,.select-panel,.search-panel,.phone-panel{display:none!important}.chat{padding:0;overflow:visible;background:#fff}
+      .row:not(.final){display:none}.row.final .bubble{max-width:100%;border:0;box-shadow:none}
+    }
+  </style>
+</head>
+<body>
+<main class="app">
+  <section class="main">
+    <header class="header">
+      <div class="identity">
+        <div class="icon" aria-hidden="true">BG</div>
+        <div>
+          <h1>Trợ lý báo giá thiết bị điện</h1>
+          <div class="status"><span class="dot"></span><span id="catalogCount">Đang tải catalog…</span></div>
+        </div>
+      </div>
+      <div class="mobile-cart">Giỏ hàng <span id="mobileCount">0</span></div>
+      <button class="ghost" id="reset" type="button">Chọn sản phẩm khác</button>
+    </header>
+
+    <div class="chat" id="chat" aria-live="polite">
+      <div class="row bot"><div class="bubble">Đang tải dữ liệu sản phẩm…</div></div>
+      <noscript>
+        <div class="row bot"><div class="bubble error">Trình duyệt cần bật JavaScript để sử dụng trợ lý báo giá.</div></div>
+      </noscript>
+    </div>
+  </section>
+
+  <aside class="side">
+    <h2>Sản phẩm đã chọn</h2>
+    <p class="side-sub">Tự động cập nhật theo cuộc hội thoại</p>
+    <div class="cart" id="cart"></div>
+    <div class="summary">
+      <div class="summary-row"><span>Số mặt hàng</span><strong id="lineCount">0</strong></div>
+      <div class="summary-row"><span>Tổng số lượng</span><strong id="unitCount">0</strong></div>
+      <div class="summary-row total"><span>Tạm tính</span><span id="grandTotal">0 ₫</span></div>
+    </div>
+    <div class="note">
+      Nguồn: bảng giá LS áp dụng từ 15-04-2026, CADIVI áp dụng từ 06-04-2026,
+      Mitsubishi Electric F1/2026, MENNEKES 2025, CHINT 2026, Autonics 2026,
+      Schneider Electric 05.2026 và Nanoco 07.2026.
+      Đơn giá hiển thị là giá tham khảo.
+    </div>
+  </aside>
+</main>
+
+<script src="config.js"></script>
+<script src="catalog-data.js"></script>
+<script src="cadivi-catalog-data.js"></script>
+<script src="mitsubishi-catalog-data.js"></script>
+<script src="mennekes-catalog-data.js"></script>
+<script src="chint-catalog-data.js"></script>
+<script src="autonics-catalog-data.js"></script>
+<script src="schneider-catalog-data.js"></script>
+<script src="nanoco-catalog-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
