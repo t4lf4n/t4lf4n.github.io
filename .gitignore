@@ -1,10 +1,8 @@
-# Chặn tất cả mọi thứ
 *
 
-# Ngoại lệ: Giữ lại cấu trúc thư mục con
 !*/
 
-# Ngoại lệ: Chỉ cho phép file html và js
 !*.html
 !*.js
 !.gitignore
+!*.css
